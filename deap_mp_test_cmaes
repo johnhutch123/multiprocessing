@@ -4,18 +4,22 @@ Created on Thu Mar 21 08:09:58 2019
 
 Multiprocessing with DEAP test.
 
-This problem is not suited to multiprocessing, it has just been used to test that multiprocessing runs correctly.
+Implement multiprocessing with CMA-ES using DEAP.
+
+This will lead onto implementing parallel processing for topology optimisation problems. 
 
 @author: pqb18127
 """
 
-#import multiprocessing 
+import multiprocessing 
 from deap import tools, creator, cma, algorithms, base, benchmarks
 import numpy as np
 import time
 
 def main():
     np.random.seed(128)
+
+    toolbox.register("evaluate", benchmarks.rastrigin)
 
     strategy = cma.Strategy(centroid=[5.0]*N, sigma=5.0, lambda_=20*N)
     toolbox.register("generate", strategy.generate, creator.Individual)
@@ -28,24 +32,23 @@ def main():
     stats.register("min", np.min)
     stats.register("max", np.max)
    
-    algorithms.eaGenerateUpdate(toolbox, ngen=1000, stats=stats, halloffame=hof)
-    
+    algorithms.eaGenerateUpdate(toolbox, ngen=100, stats=stats, halloffame=hof)
+
+# Creator objects must be defined in the global area, outside the main() function.
 creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
 creator.create("Individual", list, fitness=creator.FitnessMin)
 
 toolbox = base.Toolbox()
-toolbox.register("evaluate", benchmarks.rastrigin)
+
 
 if __name__=='__main__':
     
     N = 10
     
-    #pool = multiprocessing.Pool()
-    #toolbox.register("map",pool.map)
+    pool = multiprocessing.Pool()
+    toolbox.register("map",pool.map)
     
     t1=time.time()
     main()
     t2= time.time()
     print(str(t2-t1))
-    # mp = 16.9s
-    # nonmp = 7.6s
