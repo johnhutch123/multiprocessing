@@ -1,0 +1,64 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Mar 21 08:09:58 2019
+
+Multiprocessing with DEAP test.
+
+This example shows the framework required to implement multiprocessing with DEAP.
+
+@author: pqb18127
+"""
+
+import multiprocessing 
+from deap import tools, creator, algorithms, base
+import numpy as np
+import random
+import time
+
+def rastrigin(x): # custom define rastrigin function. This runs
+    x = np.array(x)
+    N = len(x)
+    obj = 10*N + np.sum(x**2-10*np.cos(2*np.pi*x)) # Don't foget comma here.
+    return obj,
+
+def main():
+    pop = toolbox.population(n=300)
+    hof = tools.HallOfFame(1)
+    stats = tools.Statistics(lambda ind: ind.fitness.values)
+    stats.register("avg", np.mean)
+    stats.register("std", np.std)
+    stats.register("min", np.min)
+    stats.register("max", np.max)
+    
+    pop, log = algorithms.eaSimple(pop, toolbox, cxpb=0.5, mutpb=0.2, ngen=1000, 
+                                   stats=stats, halloffame=hof, verbose=True)
+
+N = 100
+    
+creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
+creator.create("Individual", list, fitness=creator.FitnessMin)
+toolbox = base.Toolbox()
+# Attribute generator 
+toolbox.register("attr_bool", random.uniform, -1, 1)
+# Structure initializers
+toolbox.register("individual", tools.initRepeat, creator.Individual,toolbox.attr_bool, N)
+toolbox.register("population", tools.initRepeat, list, toolbox.individual)
+
+toolbox.register("mate", tools.cxTwoPoint)
+toolbox.register("mutate", tools.mutFlipBit, indpb=0.05)
+toolbox.register("select", tools.selTournament, tournsize=3)
+toolbox.register("evaluate", rastrigin) # having an evaluation function that is part of a class is very dangerous since the object does not have the same state in all processes.
+
+
+if __name__=='__main__':
+    #N=100
+    #1000 gen
+    #pop = 300
+    #47.4s multi
+    #49.2s multi
+    pool = multiprocessing.Pool(processes=6)
+    toolbox.register("map",pool.map)
+    t1=time.time()
+    main()
+    t2= time.time()
+    print(str(t2-t1))
